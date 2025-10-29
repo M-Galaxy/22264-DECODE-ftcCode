@@ -1,15 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.IMU;
+
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp
-public class FeildCentricDriveTest extends LinearOpMode {
+@TeleOp(name="Full Robot Test")
+public class FullTestCode extends LinearOpMode {
 
     final boolean DEBUG = false;
 
@@ -86,6 +87,39 @@ public class FeildCentricDriveTest extends LinearOpMode {
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
+
+            boolean bump = gamepad1.left_bumper;
+
+            DcMotor leftLauncher = hardwareMap.dcMotor.get("outL");
+            DcMotor rightLauncher = hardwareMap.dcMotor.get("outR");
+            if (bump){
+                leftLauncher.setPower(1);
+                rightLauncher.setPower(1);
+                telemetry.addData("Shooting", true);
+            }
+            else{
+                leftLauncher.setPower(0);
+                rightLauncher.setPower(0);
+            }
+
+            boolean b = gamepad1.b;
+
+            DcMotor intake = hardwareMap.dcMotor.get("intake");
+            if (b){
+                intake.setPower(1);
+                telemetry.addData("Intakeing", true);
+            }
+            else{
+                intake.setPower(0);
+            }
+
+
+            double manipulatorSpin = gamepad1.left_trigger - gamepad1.right_trigger;
+
+            DcMotor manipulator = hardwareMap.dcMotor.get("bigWheel");
+
+            telemetry.addData("Bigwheel spin", manipulatorSpin);
+            manipulator.setPower(manipulatorSpin);
 
             telemetry.update();
         }
