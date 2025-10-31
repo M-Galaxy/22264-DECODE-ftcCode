@@ -12,7 +12,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 @TeleOp(name="Full Robot Test")
 public class FullTestCode extends LinearOpMode {
 
-    final boolean DEBUG = false;
+    final boolean DEBUG = true;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -22,8 +22,8 @@ public class FullTestCode extends LinearOpMode {
         DcMotor backRightMotor = hardwareMap.dcMotor.get("RB");
 
         // Reverse the right side motors.
-        frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        frontLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        backLeftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         //STOP THE DRIFT
         frontLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -44,10 +44,10 @@ public class FullTestCode extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
-            double y = gamepad1.left_stick_y; // Remember, I have no idea why every stick value is reversed
-            double x = -gamepad1.left_stick_x;
-            double rx = -gamepad1.right_stick_x;
-            boolean a = gamepad1.a;
+            double y = -gamepad1.left_stick_y; // Remember, I have no idea why every stick value is reversed
+            double x = gamepad1.left_stick_x;
+            double rx = gamepad1.right_stick_x;
+            boolean opt = gamepad1.options;
 
             if (DEBUG) {
                 telemetry.addData("Y drive", y);
@@ -55,7 +55,7 @@ public class FullTestCode extends LinearOpMode {
                 telemetry.addData("RX drive", rx);
             }
 
-            if (a) {
+            if (opt) {
                 imu.resetYaw();
                 telemetry.addData("Yaw reset", rx);
             }
@@ -67,6 +67,11 @@ public class FullTestCode extends LinearOpMode {
             // Rotate the movement direction counter to the bot's rotation
             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
             double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+
+            if (DEBUG) {
+                telemetry.addData("rOTATED X", rotX);
+                telemetry.addData("rOTATED Y", rotY);
+            }
 
             rotX = rotX * 1.1;  // Counteract imperfect strafing
 
@@ -93,7 +98,7 @@ public class FullTestCode extends LinearOpMode {
             DcMotor leftLauncher = hardwareMap.dcMotor.get("outL");
             DcMotor rightLauncher = hardwareMap.dcMotor.get("outR");
             if (bump){
-                leftLauncher.setPower(1);
+                leftLauncher.setPower(-1);
                 rightLauncher.setPower(1);
                 telemetry.addData("Shooting", true);
             }
@@ -102,19 +107,25 @@ public class FullTestCode extends LinearOpMode {
                 rightLauncher.setPower(0);
             }
 
+            boolean a = gamepad1.a;
             boolean b = gamepad1.b;
 
             DcMotor intake = hardwareMap.dcMotor.get("intake");
-            if (b){
+            if (a){
                 intake.setPower(1);
+                gamepad1.setLedColor(0,255,0,100);
                 telemetry.addData("Intakeing", true);
-            }
-            else{
+            } else if (b) {
+                intake.setPower(-1);
+                gamepad1.setLedColor(255,0,0,100);
+                telemetry.addData("Outakeing", true);
+            } else{
+                gamepad1.setLedColor(255,255,255,100);
                 intake.setPower(0);
             }
 
 
-            double manipulatorSpin = gamepad1.left_trigger - gamepad1.right_trigger;
+            double manipulatorSpin = (gamepad1.left_trigger - gamepad1.right_trigger) / 4;
 
             DcMotor manipulator = hardwareMap.dcMotor.get("bigWheel");
 
