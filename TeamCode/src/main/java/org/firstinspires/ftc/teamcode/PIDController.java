@@ -35,21 +35,28 @@ public class PIDController {
         // Proportional term
         double proportionalTerm = kp * error;
 
-        // Integral term
-        integral += error * timer.seconds();
-        double integralTerm = ki * integral;
+        double deltaTime = timer.seconds();
+        timer.reset();
 
-        // Derivative term
-        double derivativeTerm = kd * ((error - previousError) / timer.seconds());
+        if (deltaTime <= 0) deltaTime = 1e-3; // prevent div-by-zero
+
+        integral += error * deltaTime;
+        double integralTerm = ki * integral;
+        double derivativeTerm = kd * ((error - previousError) / deltaTime);
+
+
+//        // Integral term
+//        integral += error * timer.seconds();
+//        double integralTerm = ki * integral;
+//
+//        // Derivative term
+//        double derivativeTerm = kd * ((error - previousError) / timer.seconds());
 
         // Calculate the output value
         double output = proportionalTerm + integralTerm + derivativeTerm;
 
         // Update previous error value
         previousError = error;
-
-        //reset the timer
-        timer.reset();
 
         return output;
     }
