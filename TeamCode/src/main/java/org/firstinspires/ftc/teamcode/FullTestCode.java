@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name="Full Robot Test")
+@TeleOp(name="Full Robot Test", group="Test scripts")
 public class FullTestCode extends LinearOpMode {
 
     final boolean DEBUG = true;

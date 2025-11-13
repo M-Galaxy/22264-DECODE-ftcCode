@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name="Feild Centric")
+@TeleOp(name="Field Centric", group="Test scripts")
 public class FeildCentericDriveTest extends LinearOpMode {
 
     final boolean DEBUG = false;

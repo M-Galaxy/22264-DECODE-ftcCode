@@ -6,15 +6,17 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name="Demo & Game (RUN ME)")
+@TeleOp(name="Demo & Game (RUN ME)", group="Non-game scripts")
 public class DemoAndGame extends LinearOpMode {
-
     final boolean DEBUG = true;
 
     final double speedReduct = 0.2;
+
+    final double PPRLauncher = 28;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -48,9 +50,17 @@ public class DemoAndGame extends LinearOpMode {
         DcMotor leftLauncher = hardwareMap.dcMotor.get("outL");
         DcMotor rightLauncher = hardwareMap.dcMotor.get("outR");
 
+        leftLauncher.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightLauncher.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         waitForStart();
 
         if (isStopRequested()) return;
+
+        ElapsedTime timer = new ElapsedTime();
+
+        double lastPosL = 0;
+        double lastPosR = 0;
 
         while (opModeIsActive()) {
             // all of my keybinds stored nice and pretty
@@ -118,8 +128,8 @@ public class DemoAndGame extends LinearOpMode {
                 backRightMotor.setPower(backRightPower*speedReduct);
 
                 if (bump) {
-                    leftLauncher.setPower(-0.3);
-                    rightLauncher.setPower(0.3);
+                    leftLauncher.setPower(-0.22);
+                    rightLauncher.setPower(0.22);
                     telemetry.addData("Shooting", true);
                 } else {
                     leftLauncher.setPower(0);
@@ -141,7 +151,7 @@ public class DemoAndGame extends LinearOpMode {
             }
             else { // GAME SETTING ------------------------
                 if (bump){
-                    intake.setPower(0.75);
+                    intake.setPower(-0.75);
                     telemetry.addData("Intake on", true);
                 }
                 else{
@@ -150,16 +160,21 @@ public class DemoAndGame extends LinearOpMode {
 
                 double launchPower = 0;
 
-                if (a){
-                    launchPower = 1.0;
+                if (b){
+                    launchPower = 0.5;
                     telemetry.addData("Level 1 launch", true);
                     gamepad1.setLedColor(255,0,0,200);
-                } else if (b) {
-                    launchPower = 0.8;
+                } else if (a) {
+                    launchPower = 0.475;
                     telemetry.addData("Level 2 launch", true);
                     gamepad1.setLedColor(255,255,0,200);
                 }else if (bx){
-                    launchPower = 0.6;
+                    launchPower = 0.45;
+                    telemetry.addData("Level 3 launch", true);
+                    gamepad1.setLedColor(0,255,0,200);
+                }
+                else if (gamepad1.y){
+                    launchPower = 0.425;
                     telemetry.addData("Level 3 launch", true);
                     gamepad1.setLedColor(0,255,0,200);
                 }
@@ -172,6 +187,23 @@ public class DemoAndGame extends LinearOpMode {
 
                 leftLauncher.setPower(-launchPower);
                 rightLauncher.setPower(launchPower);
+
+                double deltaTime = timer.seconds();
+
+                double deltaTicksL = (leftLauncher.getCurrentPosition() - lastPosL);
+                double deltaTicksR = (rightLauncher.getCurrentPosition() - lastPosR);
+
+                double tpsL = deltaTicksL / deltaTime;
+                double tpsR = deltaTicksR / deltaTime;
+
+                telemetry.addData("Left launcher RMP", (tpsL/PPRLauncher));
+                telemetry.addData("Right launcher RMP", (tpsR/PPRLauncher));
+
+
+                telemetry.addData("Avg RMP", (((tpsR/PPRLauncher)+(tpsL/PPRLauncher))/2));
+
+                lastPosL = leftLauncher.getCurrentPosition();
+                lastPosR = rightLauncher.getCurrentPosition();
             }
 
 
@@ -182,6 +214,8 @@ public class DemoAndGame extends LinearOpMode {
                 game = false;
             }
 
+
+            timer.reset();
             telemetry.update();
         }
     }

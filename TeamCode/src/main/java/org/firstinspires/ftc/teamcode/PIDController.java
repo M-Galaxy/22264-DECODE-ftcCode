@@ -29,6 +29,10 @@ public class PIDController {
         this.previousError = 0.0;
     }
 
+    public double getError(double currentValue){
+        return target - currentValue;
+    }
+
     public double calculateOutput(double currentValue) {
         double error = target - currentValue;
 

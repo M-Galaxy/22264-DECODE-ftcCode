@@ -1,19 +1,21 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
+import static java.lang.Math.abs;
+
+import com.qualcomm.hardware.dfrobot.HuskyLens;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name="Full and AutoWheel Robot Test")
+@TeleOp(name="Full and AutoWheel Robot Test", group="Test scripts")
 public class FullTestCodeWithWheel extends LinearOpMode {
-
-    final boolean DEBUG = true;
+    final boolean DEBUG = true; //true;
 
     private final double encoderPPR = 537.7;
 
@@ -25,16 +27,17 @@ public class FullTestCodeWithWheel extends LinearOpMode {
         DcMotor backRightMotor = hardwareMap.dcMotor.get("RB");
 
         double target = 0;
-        double targetFin = 0;
-        PIDController manipPID = new PIDController(0.0075, 0, 0); //0.005); // Tune these!
+        PIDController manipPID = new PIDController(0.0075, 0, 0); //0.005); // TODO - Tune these!
 
         DcMotor manipulator = hardwareMap.dcMotor.get("bigWheel");
         manipulator.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         manipulator.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         manipulator.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        manipulator.setDirection(DcMotorSimple.Direction.REVERSE);
 
         boolean lastBumpL = false;
         boolean lastBumpR = false;
+        boolean lastShift = false;
 
 
         // Reverse the right side motors.
@@ -62,6 +65,13 @@ public class FullTestCodeWithWheel extends LinearOpMode {
 
         rightLauncher.setDirection(DcMotorSimple.Direction.REVERSE); // make both spin same way
 
+        manipPID.setTarget(manipulator.getCurrentPosition()); // set the wheels init position to the target so it docent kill anybody
+
+        //CamHandler camera = new CamHandler(hardwareMap.get(HuskyLens.class,"camera"), true);//TODO - meue for choising red or blude
+
+        CamHandler camera = new CamHandler(hardwareMap.get(HuskyLens.class, "camera"), true, telemetry);
+
+
         waitForStart();
 
         if (isStopRequested()) return;
@@ -71,6 +81,11 @@ public class FullTestCodeWithWheel extends LinearOpMode {
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
             boolean opt = gamepad1.options;
+
+            if (gamepad1.left_bumper){
+                rx = camera.getTagError(1) / 1000 * -1;
+                telemetry.addData("The error", camera.getTagError(1));
+            }
 
             if (DEBUG) {
                 telemetry.addData("Y drive", y);
@@ -83,6 +98,8 @@ public class FullTestCodeWithWheel extends LinearOpMode {
                 telemetry.addData("Yaw reset", rx);
             }
 
+
+
             double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
             if (DEBUG) {telemetry.addData("Heading", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));}
@@ -92,13 +109,13 @@ public class FullTestCodeWithWheel extends LinearOpMode {
             double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
 
             if (DEBUG) {
-                telemetry.addData("rOTATED X", rotX);
-                telemetry.addData("rOTATED Y", rotY);
+                telemetry.addData("ROTATED X", rotX);
+                telemetry.addData("ROTATED Y", rotY);
             }
 
             rotX = rotX * 1.1;  // Counteract imperfect strafing
 
-            double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+            double denominator = Math.max(abs(rotY) + abs(rotX) + abs(rx), 1);
             double frontLeftPower = (rotY + rotX + rx) / denominator;
             double backLeftPower = (rotY - rotX + rx) / denominator;
             double frontRightPower = (rotY - rotX - rx) / denominator;
@@ -116,9 +133,11 @@ public class FullTestCodeWithWheel extends LinearOpMode {
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
 
+            double launchStrength = gamepad2.left_trigger;
 
-            double launchStrength = gamepad2.right_trigger;  // range: 0.0 - 1.0
-
+            if (gamepad2.left_trigger == 0) {
+                launchStrength = gamepad2.right_trigger;  // range: 0.0 - 1.0
+            }
             leftLauncher.setPower(-launchStrength);
             rightLauncher.setPower(-launchStrength);
 
@@ -159,22 +178,29 @@ public class FullTestCodeWithWheel extends LinearOpMode {
             if (bumpR && !lastBumpR) {
                 target -= (1.0 / 3.0) * encoderPPR;
             }
-            if (shift) {
-                targetFin = target + ((1.0 / 3.0) * encoderPPR);
+            if (shift && !lastShift) {
+                target += (1.0 / 6.0) * encoderPPR;
             }
 
             lastBumpL = bumpL;
             lastBumpR = bumpR;
+            lastShift = shift;
+
 
             manipPID.setTarget(target);
             double manipPower = manipPID.calculateOutput(manipulator.getCurrentPosition());
-            manipulator.setPower(manipPower / 2);
+            if(abs(manipPower) < 0.1){ manipPower = 0; } // no more EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+            if(!(abs(manipPID.getError(manipulator.getCurrentPosition())) < 2.5)) {
+                manipulator.setPower(manipPower/1.5);
+            }
 
-            telemetry.addData("Manipulator Target", target);
-            telemetry.addData("Manipulator Pos", manipulator.getCurrentPosition());
-            telemetry.addData("Manipulator Power", manipPower);
+            if (DEBUG) {
+                telemetry.addData("Manipulator Target", target);
+                telemetry.addData("Manipulator Pos", manipulator.getCurrentPosition());
+                telemetry.addData("Manipulator Power", manipPower);
 
-
+                camera.addLensTelemetry();
+            }
             telemetry.update();
         }
     }
