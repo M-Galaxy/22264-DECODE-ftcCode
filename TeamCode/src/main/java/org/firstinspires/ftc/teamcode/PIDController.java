@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import static java.lang.Math.abs;
+
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class PIDController {
@@ -48,7 +50,8 @@ public class PIDController {
         double integralTerm = ki * integral;
         double derivativeTerm = kd * ((error - previousError) / deltaTime);
 
-
+//oh my outdated code, how i miss you..
+//
 //        // Integral term
 //        integral += error * timer.seconds();
 //        double integralTerm = ki * integral;

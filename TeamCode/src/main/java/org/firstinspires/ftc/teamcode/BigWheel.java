@@ -1,78 +1,94 @@
 package org.firstinspires.ftc.teamcode;
 
-
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 import static java.lang.Math.abs;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-
 public class BigWheel {
 
-    private final double kp = 1; // Proportional gain
+    private final double kp = 1.1; // Proportional gain
     private final double ki = 0; // Integral gain
     private final double kd = 0; // Derivative gain
 
     public PIDController PID = new PIDController(kp, ki, kd);
-
     private final double encoderPPR = 537.7;
 
-    int targetSlot = 0;
+    // next open slot to insert into
+    public int targetSlot = 1;
+    public boolean isMoving = false;
 
-    // real things
     public DcMotor Motor;
     public NormalizedColorSensor colorSensor;
 
     public double positionOffset;
-
-    public double Target = 0; // N:3 * PPR this is for both intake and launcher
-    public double posTolerance = 5;
+    public double Target = 0;
+    public double posTolerance = 5; // counts
 
     // target colors (normalized)
-    final float[] purpleTarget = {0.02f, 0.0f, 0.02f};
-    final float[] greenTarget = {0.0f, 0.02f, 0.0f};
+    final float[] purpleTarget = {0.0047f, 0.0063f, 0.0068f};
+    final float[] greenTarget = {0.0038f, 0.0066f, 0.0042f};
 
-    final float[] orangeHoming = {0.5f, 0.5f, 0}; // the orange color used for homing
+    final float[] orangeTarget = {0.0038f, 0.0066f, 0.0042f, 0.5f};///R,G,B,TOLERANCE
 
-    final float colorTolerance = 0.5f; // acceptable color difference (0-1 scale)
+    final float colorTolerance = 0.05f;
 
-    // I LOVE IMPORTING TELEMETRY
     Telemetry telemetry;
 
-    String[] index = {"X", "/", "X", "/", "X", "/"}; // G/P : green/purple ball, X : empty slot, / : currently block slot
+    String[] index = {"/", "X", "/", "X", "/", "X"}; // this starts on the orange, i shifted it over 1 a bit ago
 
     public BigWheel(DcMotor Motor, NormalizedColorSensor colorSensor, Telemetry telemetry) {
         this.Motor = Motor;
         this.colorSensor = colorSensor;
+        this.telemetry = telemetry;
         this.positionOffset = (Motor.getCurrentPosition() / encoderPPR);
         Motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        this.telemetry = telemetry;
+        Motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        PID.setTarget(positionOffset);
+        isMoving = false;
     }
 
     // === Utility ===
     public double getPos() {
-        return Motor.getCurrentPosition();
+        return Motor.getCurrentPosition() - positionOffset;
     }
+
 
     public void goToCurTarget() {
         double curPos = getPos() / encoderPPR;
         double motorOut = PID.calculateOutput(curPos);
 
-        if (abs(curPos - Target) > posTolerance / encoderPPR) {
+        double error = abs(PID.getError(curPos));
+
+
+
+        isMoving = true;
+        if (abs(motorOut) >= 0.005){
             Motor.setPower(motorOut);
-        } else {
-            Motor.setPower(0);
         }
+        else {
+            Motor.setPower(0);
+            isMoving = false;
+        }
+
+//        if (error > posTolerance / encoderPPR) {
+//            Motor.setPower(motorOut);
+//            isMoving = true;
+//        } else {
+//            Motor.setPower(0);
+//            if (isMoving) {
+//                telemetry.addLine("Arrived at target slot: " + targetSlot);
+//                telemetry.update();
+//            }
+//            isMoving = false;
+//        }
     }
 
     private double normalizeShortestPath(double current, double target) {
         double diff = target - current;
-        // Wrap difference into range (-0.5, 0.5)
         diff -= Math.floor(diff + 0.5);
         return current + diff;
     }
@@ -81,8 +97,8 @@ public class BigWheel {
         double currentRev = getPos() / encoderPPR;
         double rawTarget = slotIndex * (1.0 / 6.0);
         Target = normalizeShortestPath(currentRev, rawTarget);
-        PID.setTarget(Target);
-        goToCurTarget();
+        PID.setTarget(Target);// + positionOffset);
+        isMoving = true;
     }
 
     // === Color Checking ===
@@ -114,10 +130,6 @@ public class BigWheel {
 
     // === SLOT LOGIC ===
 
-    /**
-     * Move the specified ball color ("P" or "G") to position 4 and clear it afterward.
-     * @param colorCode "P" for purple or "G" for green
-     */
     public void launchBall(String colorCode) {
         if (!colorCode.equals("P") && !colorCode.equals("G")) {
             telemetry.addLine("Invalid color input! Use 'P' or 'G'.");
@@ -126,8 +138,6 @@ public class BigWheel {
         }
 
         int ballPos = -1;
-
-        // Find the ball of the requested color
         for (int i = 0; i < index.length; i++) {
             if (index[i].equals(colorCode)) {
                 ballPos = i;
@@ -141,41 +151,56 @@ public class BigWheel {
             return;
         }
 
-        // Move to position 4 (launcher position)
-        moveToSlot(4);
+        //When the launcher is launching the ball needs to be in the launching position to get launched by the launcher!
+        int launchSlot = (ballPos + 3) % index.length;
 
-        // Clear the ball after "launching"
-        index[ballPos] = "X";
+
+        if (ballPos != -1) {
+            moveToSlot(launchSlot);
+            this.targetSlot = launchSlot;
+            telemetry.addData("Moved to launching spot slot", launchSlot);
+        } else {
+            telemetry.addLine("All slots emptied");
+        }
+        //index[ballPos] = "X";
 
         telemetry.addLine(colorCode + " ball moved to launch (pos 4) and cleared.");
         telemetry.update();
     }
 
-
     /**
-     * Wait for a ball input (P or G) and insert into slot 1 if open.
-     * Then rotate to next open slot.
+     * Non-blocking intake that only acts if not moving.
+     * Returns true if a ball was accepted and moved to next slot.
      */
-    public void intakeBallManual(String inputBall) {
-        if (!inputBall.equals("P") && !inputBall.equals("G")) {
-            telemetry.addLine("Invalid input (use 'P' or 'G')");
+    public boolean tryIntake() {
+        if (isMoving) {
+            telemetry.addLine("Currently moving, skipping intake...");
             telemetry.update();
-            return;
+            return false;
         }
 
-        int targetSlot = 1;
-
-        if (!index[targetSlot].equals("X")) {
-            telemetry.addLine("Slot 1 not open! Waiting...");
+        double detected = ballCheck();
+        if (detected == 0) {
+            telemetry.addLine("No ball detected on tryIntake()");
             telemetry.update();
-            return;
+            return false;
         }
 
-        // Insert new ball
-        index[targetSlot] = inputBall;
-        telemetry.addData("Added", inputBall + " to slot " + targetSlot);
+        String inputBall = (detected == 1) ? "P" : "G";
 
-        // Move to next open slot
+//        if (!index[this.targetSlot].equals("X")) {
+//            telemetry.addLine("Slot " + this.targetSlot + " not open!");
+//            telemetry.update();
+//            return false;
+//        }
+
+        // Insert ball
+        if (index[this.targetSlot] != "/") {
+            index[this.targetSlot] = inputBall;
+            telemetry.addData("Added", inputBall + " to slot " + this.targetSlot);
+        }
+
+        // Find next open slot
         int nextOpen = -1;
         for (int i = 0; i < index.length; i++) {
             if (index[i].equals("X")) {
@@ -184,63 +209,55 @@ public class BigWheel {
             }
         }
 
+        nextOpen = (nextOpen + 3) % index.length;
+
         if (nextOpen != -1) {
             moveToSlot(nextOpen);
+            this.targetSlot = nextOpen;
             telemetry.addData("Moved to next open slot", nextOpen);
         } else {
             telemetry.addLine("All slots full!");
         }
 
         telemetry.update();
+        return true;
     }
 
-    /**
-     * Automatically waits for a ball detected by the color sensor.
-     * When a ball (purple or green) is detected, it is added to slot 1 if open,
-     * then moves to the next available open slot.
-     */
-    public void intakeBall() {
-        telemetry.addLine("Waiting for ball detection...");
-        telemetry.update();
 
-        // Wait until a ball is detected by color sensor
-        double detected = 0;
-        while (detected == 0) {
-            detected = ballCheck(); // 0 = none, 1 = purple, 2 = green
+    // PANIC CODE
+    public void moveRight(){
+        int rightSlot = (targetSlot + 1) % index.length;
+        moveToSlot(rightSlot);
+        this.targetSlot = rightSlot;
+    }
+
+    public void moveLeft(){
+        int leftSlot = (targetSlot - 1) % index.length;
+        moveToSlot(leftSlot);
+        this.targetSlot = leftSlot;
+    }
+
+    //HOMING CODE
+
+    public boolean tryHome(){
+        Motor.setPower(0.3);
+
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+        float r = colors.red, g = colors.green, b = colors.blue;
+
+        float orangeDiff = abs(r - orangeTarget[0]) + abs(g - orangeTarget[1]) + abs(b - orangeTarget[2]);
+
+        if (orangeDiff > orangeTarget[3]) {
+            isMoving = true;
+            return false;
         }
-
-        String inputBall = (detected == 1) ? "P" : "G";
-        telemetry.addData("Detected Ball", inputBall);
-        telemetry.update();
-
-
-
-        if (!index[targetSlot].equals("X")) {
-            telemetry.addLine("Slot 1 not open! Waiting...");
-            telemetry.update();
-            return;
+        else{// zero out all vars and return true to show homing success.
+            positionOffset = Motor.getCurrentPosition() / encoderPPR;
+            PID.setTarget(positionOffset);
+            targetSlot = 0;
+            moveToSlot(0);
+            isMoving = false;
+            return true;
         }
-
-        // Insert new ball into slot 1
-        index[targetSlot] = inputBall;
-        telemetry.addData("Added", inputBall + " to slot " + targetSlot);
-
-        // Move to next open slot
-        int nextOpen = -1;
-        for (int i = 0; i < index.length; i++) {
-            if (index[i].equals("X")) {
-                nextOpen = i + 1; //I HCINGAOBSAJDB
-                break;
-            }
-        }
-
-        if (nextOpen != -1) {
-            moveToSlot(nextOpen);
-            telemetry.addData("Moved to next open slot", nextOpen);
-        } else {
-            telemetry.addLine("All slots full!");
-        }
-
-        telemetry.update();
     }
 }
