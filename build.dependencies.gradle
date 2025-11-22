@@ -2,7 +2,7 @@ repositories {
     mavenCentral()
     google() // Needed for androidx
     maven { url = 'https://maven.brott.dev/' } // For FTC Dashboard
-//    maven { url = "https://mymaven.bylazar.com/releases" } // for Pedro Pascal
+    maven { url = "https://mymaven.bylazar.com/releases" } // for Pedro Pascal
 }
 
 dependencies {
@@ -20,6 +20,6 @@ dependencies {
     implementation 'com.acmerobotics.dashboard:dashboard:0.5.1'
 
     // pedro coded
-//    implementation 'com.pedropathing:ftc:2.0.4'
-//    implementation 'com.pedropathing:telemetry:1.0.0'
+    implementation 'com.pedropathing:ftc:2.0.4'
+    implementation 'com.pedropathing:telemetry:1.0.0'
 }
