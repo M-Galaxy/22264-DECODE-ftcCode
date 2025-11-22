@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static java.lang.Math.toRadians;
-
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
@@ -14,27 +12,24 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import com.arcrobotics.ftclib.kinematics.HolonomicOdometry;
 
 // Dashboard
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.dashboard.canvas.Canvas;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-/**
- * Field-centric teleop with 3-wheel odometry (left, right, strafe) + IMU + Dashboard view.
- *
- * Hardware mapping (as you provided):
- *  leftOdo  = "LF"
- *  rightOdo = "RF"
- *  strafeOdo= "LB"
- *  imu      = "imu"
- *
- * Edit the constants below to match your odometry wheels.
- */
-@TeleOp(name = "Odo Dashboard Tester w/ drive", group = "Test scripts")
-public class OdoDashTest extends LinearOpMode {
+@TeleOp(name = "Ultima code Version", group = "Test scripts")
+public class UltimaScriptV1 extends LinearOpMode {
+    //BIG WHEEl
+    BigWheel wheel;
+    DcMotor intake;
+
+
+
 
     // ------------ Odometry constants (tweak for your robot) ------------
     // Encoder spec and odometry wheel geometry
@@ -58,6 +53,26 @@ public class OdoDashTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         ElapsedTime timer = new ElapsedTime();
+
+
+        // Big wheel testing
+
+        intake = hardwareMap.dcMotor.get("intake");
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        wheel = new BigWheel(
+                hardwareMap.dcMotor.get("bigWheel"),
+                hardwareMap.get(NormalizedColorSensor.class, "colorSens"),
+                telemetry
+        );
+
+        telemetry.addLine("Welcome to Ultima code Version 1.0, good luck!");
+        telemetry.addLine("Pad 1 : drive, intake, pad 2 : mange wheel, shoot");
+        telemetry.update();
+
+        boolean aHeld = false;
+        boolean bHeld = false;
+
 
         // ---------- drive motors (FTCLib) ----------
         Motor frontLeft = new Motor(hardwareMap, "LF");
@@ -174,6 +189,81 @@ public class OdoDashTest extends LinearOpMode {
             double Y = odo.getY();
             double H = odo.getHeading();
 
+
+
+            telemetry.addData("frame time", timer.time());
+            timer.reset();
+
+            // === Intake System ===
+            if (!gamepad2.start) {
+                if (gamepad2.a && !aHeld) {
+                    boolean accepted = wheel.tryIntake();
+                    if (accepted) {
+                        // Find what color was just added (previous slot)
+                        int lastSlot = (wheel.targetSlot == 0) ? 5 : wheel.targetSlot - 1;
+                        String color = wheel.index[lastSlot];
+                        telemetry.addLine("Intake: ball accepted (" + color + ")");
+
+                        if (color.equals("P")) {
+                            gamepad2.setLedColor(180, 0, 180, 3); // Purple
+                        } else if (color.equals("G")) {
+                            gamepad2.setLedColor(0, 200, 0, 3);  // Green
+                        }
+                        gamepad2.rumble(1.0, 1.0, 200);
+                    } else {
+                        telemetry.addLine("Intake: no ball or slot not open");
+                        gamepad2.setLedColor(255, 255, 0, 3); // Yellow fail flash
+                    }
+                    aHeld = true;
+                } else if (!gamepad2.a) {
+                    aHeld = false;
+                }
+
+                // Intake motor control
+                if (gamepad1.x) {
+                    intake.setPower(1);
+                } else if (gamepad1.back) {
+                    intake.setPower(-1);
+                } else {
+                    intake.setPower(0);
+                }
+
+                if (gamepad2.b && !bHeld){
+                    wheel.launchBall("P");
+                    bHeld = true;
+                }
+                else{
+                    bHeld = false;
+                }
+            }
+
+            // === Movement Control ===
+            wheel.goToCurTarget();
+
+            // === Debug Telemetry ===
+            if (gamepad2.y) {
+                telemetry.addData("Wheel Pos", wheel.Motor.getCurrentPosition());
+                telemetry.addData("Wheel Rev", wheel.Motor.getCurrentPosition() / 537.7);
+                telemetry.addData("Target Slot", wheel.targetSlot);
+                telemetry.addData("Moving", wheel.isMoving);
+                telemetry.addData("error", wheel.PID.getError(wheel.getPos()));
+
+                telemetry.addData("X (in)", "%.2f", X);
+                telemetry.addData("Y (in)", "%.2f", Y);
+                telemetry.addData("Heading (deg)", "%.1f", Math.toDegrees(H));
+
+                telemetry.addData("ODO DF", dLeft);
+                telemetry.addData("ODO DR", dRight);
+                telemetry.addData("ODO DS", dStrafe);
+
+
+                for (int i = 0; i < wheel.index.length; i++) {
+                    telemetry.addData("Index[" + i + "]", wheel.index[i]);
+                }
+
+                telemetry.update();
+            }
+
             // ---------------- dashboard drawing ----------------
             TelemetryPacket packet = new TelemetryPacket();
             Canvas field = packet.fieldOverlay();
@@ -187,26 +277,16 @@ public class OdoDashTest extends LinearOpMode {
             field.setStroke("orange");
             field.strokeLine(X, Y, X + arrowLen * Math.cos(H), Y + arrowLen * Math.sin(H));
 
+
+            wheel.telemetryColor();
+
             packet.put("x", X);
             packet.put("y", Y);
             packet.put("headingDeg", Math.toDegrees(H));
 
             dash.sendTelemetryPacket(packet);
-
-            telemetry.addData("frame time", timer.time());
-            timer.reset();
-
-            // ---------------- telemetry ----------------
-//            telemetry.addData("X (in)", "%.2f", X);
-//            telemetry.addData("Y (in)", "%.2f", Y);
-//            telemetry.addData("Heading (deg)", "%.1f", Math.toDegrees(H));
-//
-//            telemetry.addData("ODO DF", dLeft);
-//            telemetry.addData("ODO DR", dRight);
-//            telemetry.addData("ODO DS", dStrafe);
-
-            telemetry.update();
         }
+
     }
 
     /**
@@ -278,7 +358,7 @@ public class OdoDashTest extends LinearOpMode {
             double fieldDx = localX * Math.cos(headingMid) - localY * Math.sin(headingMid);
             double fieldDy = localX * Math.sin(headingMid) + localY * Math.cos(headingMid);
 
-            x += fieldDx * -1;//todo - FIGURE OUT WHY THIS IS FLIPPED
+            x += fieldDx * -1;
             y += fieldDy;
             heading = newHeading;
         }

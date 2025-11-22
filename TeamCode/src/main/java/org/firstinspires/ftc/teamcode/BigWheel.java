@@ -14,8 +14,10 @@ public class BigWheel {
     private final double ki = 0; // Integral gain
     private final double kd = 0; // Derivative gain
 
+    private final double gearRatio = 2; // my gears be ratio-ed
+
     public PIDController PID = new PIDController(kp, ki, kd);
-    private final double encoderPPR = 537.7;
+    private final double encoderPPR = 537.7 / gearRatio; // 1 motor to 2 wheel
 
     // next open slot to insert into
     public int targetSlot = 1;
@@ -23,6 +25,7 @@ public class BigWheel {
 
     public DcMotor Motor;
     public NormalizedColorSensor colorSensor;
+
 
     public double positionOffset;
     public double Target = 0;
@@ -124,8 +127,6 @@ public class BigWheel {
         if (detected == 1) telemetry.addLine("Detected: PURPLE ball");
         else if (detected == 2) telemetry.addLine("Detected: GREEN ball");
         else telemetry.addLine("Detected: None");
-
-        telemetry.update();
     }
 
     // === SLOT LOGIC ===
