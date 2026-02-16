@@ -1,16 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+//import com.acmerobotics.dashboard.FtcDashboard;
+//import com.acmerobotics.dashboard.config.Config;
+//import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+//import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 
-@Config
+//@Config
 @TeleOp(name="⚙ Color Sensor Tuner (Improved)", group="⚙ Tuning")
 public class colorTuning extends LinearOpMode {
 
@@ -30,7 +30,7 @@ public class colorTuning extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         colorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorSens");
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+//        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         telemetry.addLine("Color Sensor Tuner Ready");
         telemetry.addLine("Open FTC Dashboard to tune color targets.");
@@ -96,24 +96,24 @@ public class colorTuning extends LinearOpMode {
             telemetry.update();
 
             // ========== DASHBOARD TELEMETRY ==========
-            TelemetryPacket packet = new TelemetryPacket();
-            packet.put("R", r);
-            packet.put("G", g);
-            packet.put("B", b);
-            packet.put("Hue", hue);
-            packet.put("Sat", hsv[1]);
-            packet.put("Val", hsv[2]);
-
-            packet.put("Object Present?", objectPresent);
-            packet.put("Purple?", isPurple);
-            packet.put("Green?", isGreen);
-            packet.put("Orange?", isOrange);
-
-            packet.fieldOverlay()
-                    .setFill("rgb(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")")
-                    .fillRect(10, 10, 50, 50);
-
-            FtcDashboard.getInstance().sendTelemetryPacket(packet);
+//            TelemetryPacket packet = new TelemetryPacket();
+//            packet.put("R", r);
+//            packet.put("G", g);
+//            packet.put("B", b);
+//            packet.put("Hue", hue);
+//            packet.put("Sat", hsv[1]);
+//            packet.put("Val", hsv[2]);
+//
+//            packet.put("Object Present?", objectPresent);
+//            packet.put("Purple?", isPurple);
+//            packet.put("Green?", isGreen);
+//            packet.put("Orange?", isOrange);
+//
+//            packet.fieldOverlay()
+//                    .setFill("rgb(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")")
+//                    .fillRect(10, 10, 50, 50);
+//
+//            FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
     }
 }

@@ -13,8 +13,8 @@ import com.qualcomm.robotcore.hardware.IMU;
 
 
 //ftc dash
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+//import com.acmerobotics.dashboard.FtcDashboard;
+//import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 
 // Odo
 import com.arcrobotics.ftclib.hardware.motors.Motor;
@@ -56,9 +56,9 @@ public class FTCLibFieldCentric extends LinearOpMode {
         imu.initialize(parameters);
 
         // Initialize dashboard
-        FtcDashboard dashboard = FtcDashboard.getInstance();
-        // Send telemetry both to DS and dashboard
-        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
+//        FtcDashboard dashboard = FtcDashboard.getInstance();
+//        // Send telemetry both to DS and dashboard
+//        telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
 
         waitForStart();
 

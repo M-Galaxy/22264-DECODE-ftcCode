@@ -15,10 +15,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.arcrobotics.ftclib.kinematics.HolonomicOdometry;
 
 // Dashboard
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.dashboard.canvas.Canvas;
+//import com.acmerobotics.dashboard.FtcDashboard;
+//import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+//import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+//import com.acmerobotics.dashboard.canvas.Canvas;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -99,8 +99,8 @@ public class UltimaScriptV1 extends LinearOpMode {
         imu.initialize(imuParams);
 
         // ---------- Dashboard ----------
-        FtcDashboard dash = FtcDashboard.getInstance();
-        telemetry = new MultipleTelemetry(telemetry, dash.getTelemetry());
+//        FtcDashboard dash = FtcDashboard.getInstance();
+//        telemetry = new MultipleTelemetry(telemetry, dash.getTelemetry());
 
         // ---------- odometry encoders (plugs into motor ports) ----------
         // leftOdo = LF, rightOdo = RF, strafeOdo = LB per your mapping
@@ -265,26 +265,26 @@ public class UltimaScriptV1 extends LinearOpMode {
             }
 
             // ---------------- dashboard drawing ----------------
-            TelemetryPacket packet = new TelemetryPacket();
-            Canvas field = packet.fieldOverlay();
-            field.setTranslation(offsetOrginX, offsetOrginY);
-
-
-            field.setFill("blue");
-            field.fillRect(X - robotSizeX / 2.0, Y - robotSizeY / 2.0, robotSizeX, robotSizeY);
-
-            double arrowLen = robotSizeY / 2.0;
-            field.setStroke("orange");
-            field.strokeLine(X, Y, X + arrowLen * Math.cos(H), Y + arrowLen * Math.sin(H));
-
-
-            wheel.telemetryColor();
-
-            packet.put("x", X);
-            packet.put("y", Y);
-            packet.put("headingDeg", Math.toDegrees(H));
-
-            dash.sendTelemetryPacket(packet);
+//            TelemetryPacket packet = new TelemetryPacket();
+//            Canvas field = packet.fieldOverlay();
+//            field.setTranslation(offsetOrginX, offsetOrginY);
+//
+//
+//            field.setFill("blue");
+//            field.fillRect(X - robotSizeX / 2.0, Y - robotSizeY / 2.0, robotSizeX, robotSizeY);
+//
+//            double arrowLen = robotSizeY / 2.0;
+//            field.setStroke("orange");
+//            field.strokeLine(X, Y, X + arrowLen * Math.cos(H), Y + arrowLen * Math.sin(H));
+//
+//
+//            wheel.telemetryColor();
+//
+//            packet.put("x", X);
+//            packet.put("y", Y);
+//            packet.put("headingDeg", Math.toDegrees(H));
+//
+//            dash.sendTelemetryPacket(packet);
         }
 
     }
